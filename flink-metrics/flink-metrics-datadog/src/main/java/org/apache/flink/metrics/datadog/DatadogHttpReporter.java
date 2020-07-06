@@ -35,8 +35,10 @@ import org.slf4j.LoggerFactory;
 import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -48,6 +50,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class DatadogHttpReporter implements MetricReporter, Scheduled {
 	private static final Logger LOGGER = LoggerFactory.getLogger(DatadogHttpReporter.class);
 	private static final String HOST_VARIABLE = "<host>";
+	private static final String DEFAULT_DELIMITER = ".";
 
 	// Both Flink's Gauge and Meter values are taken as gauge in Datadog
 	private final Map<Gauge, DGauge> gauges = new ConcurrentHashMap<>();
@@ -57,6 +60,7 @@ public class DatadogHttpReporter implements MetricReporter, Scheduled {
 	private DatadogHttpClient client;
 	private List<String> configTags;
 	private int maxMetricsPerRequestValue;
+	private Set<String> excludedVariables;
 
 	private final Clock clock = () -> System.currentTimeMillis() / 1000L;
 
@@ -66,10 +70,12 @@ public class DatadogHttpReporter implements MetricReporter, Scheduled {
 	public static final String DATA_CENTER = "dataCenter";
 	public static final String TAGS = "tags";
 	public static final String MAX_METRICS_PER_REQUEST = "maxMetricsPerRequest";
+	public static final String EXCLUDED_VARIABLES = "excludedVariables";
 
 	@Override
 	public void notifyOfAddedMetric(Metric metric, String metricName, MetricGroup group) {
-		final String name = group.getMetricIdentifier(metricName);
+		//final String name = group.getMetricIdentifier(metricName);
+		final String name = createMetricIdentifier(metricName, group);
 
 		List<String> tags = new ArrayList<>(configTags);
 		tags.addAll(getTagsFromMetricGroup(group));
@@ -91,6 +97,22 @@ public class DatadogHttpReporter implements MetricReporter, Scheduled {
 			LOGGER.warn("Cannot add unknown metric type {}. This indicates that the reporter " +
 				"does not support this metric type.", metric.getClass().getName());
 		}
+	}
+
+	private String createMetricIdentifier(String metricName, MetricGroup group) {
+		StringBuilder sb = new StringBuilder();
+		String[] scopeComponents = group.getScopeComponents();
+		for (int i = 0; i <= scopeComponents.length - 1; i++){
+			String curScopeComponent = scopeComponents[i];
+			if (excludedVariables.contains(curScopeComponent)){
+				i++;
+			} else {
+				sb.append(curScopeComponent);
+				sb.append(DEFAULT_DELIMITER);
+			}
+		}
+		sb.append(metricName);
+		return sb.toString();
 	}
 
 	@Override
@@ -115,10 +137,12 @@ public class DatadogHttpReporter implements MetricReporter, Scheduled {
 		String proxyHost = config.getString(PROXY_HOST, null);
 		Integer proxyPort = config.getInteger(PROXY_PORT, 8080);
 		String rawDataCenter = config.getString(DATA_CENTER, "US");
+		String rasExcludedVariables = config.getString(EXCLUDED_VARIABLES, "");
 		maxMetricsPerRequestValue = config.getInteger(MAX_METRICS_PER_REQUEST, 2000);
 		DataCenter dataCenter = DataCenter.valueOf(rawDataCenter);
 		String tags = config.getString(TAGS, "");
-
+		excludedVariables = new HashSet<>();
+		excludedVariables.addAll(Arrays.asList(rasExcludedVariables.split(";")));
 		client = new DatadogHttpClient(apiKey, proxyHost, proxyPort, dataCenter, true);
 
 		configTags = getTagsFromConfig(tags);
