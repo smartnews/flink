@@ -31,12 +31,31 @@ under the License.
 
 	<artifactId>flink-metrics-datadog</artifactId>
 	<name>flink-metrics-datadog</name>
+	<version>1.10-sn-0.1</version>
+
+	<properties>
+		<projectversion>1.10-SNAPSHOT</projectversion>
+	</properties>
+
+
+	<distributionManagement>
+		<repository>
+			<id>smartnews</id>
+			<name>smartnews</name>
+			<url>http://nexus.smartnews.be/nexus/content/repositories/smartnews</url>
+		</repository>
+		<snapshotRepository>
+			<id>smartnews-snapshots</id>
+			<name>smartnews-snapshots</name>
+			<url>$http://nexus.smartnews.be/nexus/content/repositories/snapshots</url>
+		</snapshotRepository>
+	</distributionManagement>
 
 	<dependencies>
 		<dependency>
 			<groupId>org.apache.flink</groupId>
 			<artifactId>flink-metrics-core</artifactId>
-			<version>${project.version}</version>
+			<version>${projectversion}</version>
 			<scope>provided</scope>
 		</dependency>
 
