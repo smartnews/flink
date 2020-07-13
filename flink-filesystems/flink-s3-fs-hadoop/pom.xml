@@ -27,10 +27,29 @@ under the License.
 		<relativePath>..</relativePath>
 	</parent>
 
+	<properties>
+		<projectversion>1.10-SNAPSHOT</projectversion>
+	</properties>
+
 	<artifactId>flink-s3-fs-hadoop</artifactId>
-	<name>flink-s3-fs-hadoop</name>
+	<name>zz_flink-s3-fs-hadoop</name>
+	<version>1.10-sn-0.1</version>
 
 	<packaging>jar</packaging>
+
+	<distributionManagement>
+		<repository>
+			<id>smartnews</id>
+			<name>smartnews</name>
+			<url>http://nexus.smartnews.be/nexus/content/repositories/smartnews</url>
+		</repository>
+		<snapshotRepository>
+			<id>smartnews-snapshots</id>
+			<name>smartnews-snapshots</name>
+			<url>$http://nexus.smartnews.be/nexus/content/repositories/snapshots</url>
+		</snapshotRepository>
+	</distributionManagement>
+
 
 	<dependencies>
 
@@ -38,7 +57,7 @@ under the License.
 		<dependency>
 			<groupId>org.apache.flink</groupId>
 			<artifactId>flink-core</artifactId>
-			<version>${project.version}</version>
+			<version>${projectversion}</version>
 			<scope>provided</scope>
 		</dependency>
 
@@ -46,7 +65,7 @@ under the License.
 		<dependency>
 			<groupId>org.apache.flink</groupId>
 			<artifactId>flink-s3-fs-base</artifactId>
-			<version>${project.version}</version>
+			<version>${projectversion}</version>
 		</dependency>
 
 		<dependency>
@@ -62,7 +81,7 @@ under the License.
 		<dependency>
 			<groupId>org.apache.flink</groupId>
 			<artifactId>flink-core</artifactId>
-			<version>${project.version}</version>
+			<version>${projectversion}</version>
 			<scope>test</scope>
 			<type>test-jar</type>
 		</dependency>
@@ -70,7 +89,7 @@ under the License.
 		<dependency>
 			<groupId>org.apache.flink</groupId>
 			<artifactId>flink-hadoop-fs</artifactId>
-			<version>${project.version}</version>
+			<version>${projectversion}</version>
 			<scope>test</scope>
 			<type>test-jar</type>
 		</dependency>
