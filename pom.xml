@@ -158,6 +158,17 @@ under the License.
 		<japicmp.outputDir>tools/japicmp-output</japicmp.outputDir>
 	</properties>
 
+	<distributionManagement>
+		<snapshotRepository>
+			<id>smartnews-snapshots</id>
+			<url>http://nexus.smartnews.be/nexus/content/repositories/snapshots</url>
+		</snapshotRepository>
+		<repository>
+			<id>smartnews</id>
+			<url>http://nexus.smartnews.be/nexus/content/repositories/smartnews</url>
+		</repository>
+	</distributionManagement>
+
 	<dependencies>
 
 		<dependency>
