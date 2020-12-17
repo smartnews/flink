@@ -31,10 +31,10 @@ under the License.
 
 	<artifactId>flink-metrics-datadog-smartnews</artifactId>
 	<name>flink-metrics-datadog-smartnews</name>
-	<version>1.11.2</version>
+	<version>1.11.3</version>
 
 	<properties>
-		<project.version1>1.11-SNAPSHOT</project.version1>
+		<project.version1>1.11.1</project.version1>
 	</properties>
 
 	<distributionManagement>
