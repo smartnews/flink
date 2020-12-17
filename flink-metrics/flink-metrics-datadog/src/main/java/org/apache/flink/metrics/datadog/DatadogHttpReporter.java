@@ -57,6 +57,8 @@ public class DatadogHttpReporter implements MetricReporter, Scheduled {
 	private DatadogHttpClient client;
 	private List<String> configTags;
 	private int maxMetricsPerRequestValue;
+	// each metric will evaluate this transform one by one
+	List<MetricTagTranform> metricTagTranforms;
 
 	private final Clock clock = () -> System.currentTimeMillis() / 1000L;
 
@@ -66,14 +68,29 @@ public class DatadogHttpReporter implements MetricReporter, Scheduled {
 	public static final String DATA_CENTER = "dataCenter";
 	public static final String TAGS = "tags";
 	public static final String MAX_METRICS_PER_REQUEST = "maxMetricsPerRequest";
+	// could be multiple configs, separated by '||',
+	// each config consist of a regex, a replace regex, and a tag extraction regex(optional if no need to add tag), separated by ',,'
+	// for example:
+	//  (.*\.)ShardId\.(.*)\.(.*),,$1$3,,||(flink\\.operator)\\.(.*)\\(.rocksdb\\..*),,$1$3,,statename:$2
+	// in this example, there are two configs, the first config does not need to add tag, so the third part is missing.
+	// however, the second config indeed need to add a tag: statename:$2
+	public static final String METRIC_REPLACE_AND_TAGGING_REGEX = "metricReplaceAndTaggingRegex";
+	static class MetricTagTranform {
+		String regex;	// e.g. (.*\.)ShardId\.(.*)\.(.*)
+		String metricReplace;	// e.g. (flink\\.operator)\\.(.*)
+		String tagToAdd;	// e.g. statename:$2
+	}
 
 	@Override
 	public void notifyOfAddedMetric(Metric metric, String metricName, MetricGroup group) {
-		final String name = group.getMetricIdentifier(metricName);
+		String name = group.getMetricIdentifier(metricName);
 
 		List<String> tags = new ArrayList<>(configTags);
 		tags.addAll(getTagsFromMetricGroup(group));
 		String host = getHostFromMetricGroup(group);
+
+		// the function may return a new metric name, may add additional tag
+		name = processMetricAndTagSn(name, tags);
 
 		if (metric instanceof Counter) {
 			Counter c = (Counter) metric;
@@ -123,7 +140,54 @@ public class DatadogHttpReporter implements MetricReporter, Scheduled {
 
 		configTags = getTagsFromConfig(tags);
 
-		LOGGER.info("Configured DatadogHttpReporter with {tags={}, proxyHost={}, proxyPort={}, dataCenter={}, maxMetricsPerRequest={}", tags, proxyHost, proxyPort, dataCenter, maxMetricsPerRequestValue);
+		String metricReplaceAndTagging = config.getString(METRIC_REPLACE_AND_TAGGING_REGEX, "");
+		metricTagTranforms = parseMetricTagTransform(metricReplaceAndTagging);
+		LOGGER.info("Configured DatadogHttpReporter with {tags={}, proxyHost={}, proxyPort={}, dataCenter={}, maxMetricsPerRequest={}, metricTagTransfor={}",
+			tags, proxyHost, proxyPort, dataCenter, maxMetricsPerRequestValue, metricReplaceAndTagging);
+	}
+
+	static List<MetricTagTranform> parseMetricTagTransform(String config) {
+		List<MetricTagTranform> ret = new ArrayList<>();	// return empty List instead of null
+		if (config == null) {
+			return ret;
+		}
+
+		String[] entries = config.split("\\|\\|");
+		for (int i = 0; i < entries.length; i++) {
+			if (entries[i] != null && entries[i].trim().length() > 0) {
+				// split by ';;'
+				String[] parts = entries[i].split(",,");
+				if (parts.length < 2) {
+					LOGGER.error("Invalid metricAndTagTransform:{}", entries[i]);
+					continue;
+				}
+				MetricTagTranform mtt = new MetricTagTranform();
+				mtt.regex = parts[0];
+				mtt.metricReplace = parts[1];
+				mtt.tagToAdd = parts.length > 2 ? parts[2] : null;
+				ret.add(mtt);
+			}
+		}
+
+		return ret;
+	}
+
+	String processMetricAndTagSn(String name, List<String> tags) {
+		if (name == null || name.trim().length() <= 0) {
+			return name;
+		}
+		String latestName = name;
+		for (MetricTagTranform mtt : metricTagTranforms) {
+			String newname = latestName.replaceFirst(mtt.regex, mtt.metricReplace);
+			if (mtt.tagToAdd != null && !latestName.equals(newname)) {
+				// regex matched and there is new tag to add
+				String newtag = latestName.replaceFirst(mtt.regex, mtt.tagToAdd);
+				tags.add(newtag);
+			}
+			latestName = newname;
+		}
+
+		return latestName;
 	}
 
 	@Override

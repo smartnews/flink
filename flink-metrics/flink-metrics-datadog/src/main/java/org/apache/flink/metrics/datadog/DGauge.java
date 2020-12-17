@@ -39,6 +39,11 @@ public class DGauge extends DMetric {
 	 */
 	@Override
 	public Number getMetricValue() {
+		Gauge g = this.gauge;
+		if (g.getValue() instanceof Boolean) {
+			Boolean b = (Boolean) g.getValue();
+			return b.booleanValue() ? 1 : 0;
+		}
 		return gauge.getValue();
 	}
 }
