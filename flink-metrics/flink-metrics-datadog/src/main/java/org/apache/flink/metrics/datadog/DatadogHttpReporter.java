@@ -156,7 +156,7 @@ public class DatadogHttpReporter implements MetricReporter, Scheduled {
 		for (int i = 0; i < entries.length; i++) {
 			if (entries[i] != null && entries[i].trim().length() > 0) {
 				// split by ',,'
-				String[] parts = entries[i].split(",,");
+				String[] parts = entries[i].trim().split(",,");
 				if (parts.length < 2) {
 					LOGGER.error("Invalid metricAndTagTransform:{}", entries[i]);
 					continue;

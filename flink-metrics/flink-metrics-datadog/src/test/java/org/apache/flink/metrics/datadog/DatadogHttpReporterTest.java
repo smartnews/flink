@@ -31,7 +31,8 @@ public class DatadogHttpReporterTest {
 	@Test
 	public void metricTagTransformTest() {
 		DatadogHttpReporter reporter = new DatadogHttpReporter();
-		String metricTagConfig = "(.*\\.)ShardId\\.(.*)\\.(.*),,$1$3,,||(flink\\.operator)\\.(.*)(\\.rocksdb\\..*),,$1$3,,statename:$2";
+		String metricTagConfig = "(.*\\.)stream\\.(.*)\\.(.*),,$1$3,,|| (.*\\.)shardId\\.(.*)\\.(.*),,$1$3,,|| (.*\\.)topic\\.\n" +
+			"(.*)\\.(.*),,$1$3,,|| (.*\\.)partition\\.(.*)\\.(.*),,$1$3,,|| (flink\\.operator)\\.(.*)(\\.rocksdb\\..*),,$1$3,,statename:$2";
 		reporter.metricTagTranforms = DatadogHttpReporter.parseMetricTagTransform(metricTagConfig);
 
 		String metric = "this.metric.will.not.match.any.pattern";
@@ -41,7 +42,7 @@ public class DatadogHttpReporterTest {
 		assertEquals(0, tags.size());
 
 		tags.clear();
-		metric = "flink.operator.ShardId.001.consumelag";
+		metric = "flink.operator.shardId.001.consumelag";
 		newmetric = reporter.processMetricAndTagSn(metric, tags);
 		assertEquals("flink.operator.consumelag", newmetric);
 		assertEquals(0, tags.size());

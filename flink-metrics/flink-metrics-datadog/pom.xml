@@ -22,19 +22,16 @@ under the License.
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-	<parent>
-		<groupId>org.apache.flink</groupId>
-		<artifactId>flink-metrics</artifactId>
-		<version>1.11-SNAPSHOT</version>
-		<relativePath>..</relativePath>
-	</parent>
 
+	<groupId>org.apache.flink</groupId>
 	<artifactId>flink-metrics-datadog-smartnews</artifactId>
 	<name>flink-metrics-datadog-smartnews</name>
-	<version>1.11.3</version>
+	<version>1.11.6</version>
 
 	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.version1>1.11.1</project.version1>
+		<java.version>1.8</java.version>
 	</properties>
 
 	<distributionManagement>
@@ -66,6 +63,7 @@ under the License.
 		<dependency>
 			<groupId>org.apache.flink</groupId>
 			<artifactId>flink-shaded-jackson</artifactId>
+			<version>2.10.1-11.0</version>
 			<scope>provided</scope>
 		</dependency>
 
@@ -87,6 +85,7 @@ under the License.
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-shade-plugin</artifactId>
+				<version>3.2.1</version>
 				<executions>
 					<execution>
 						<id>shade-flink</id>
@@ -105,6 +104,21 @@ under the License.
 						</configuration>
 					</execution>
 				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>3.8.0</version>
+				<configuration>
+					<source>${java.version}</source>
+					<target>${java.version}</target>
+					<!-- The semantics of this option are reversed, see MCOMPILER-209. -->
+					<useIncrementalCompilation>false</useIncrementalCompilation>
+					<compilerArgs>
+						<!-- Prevents recompilation due to missing package-info.class, see MCOMPILER-205 -->
+						<arg>-Xpkginfo:always</arg>
+					</compilerArgs>
+				</configuration>
 			</plugin>
 		</plugins>
 	</build>
